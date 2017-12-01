@@ -143,7 +143,7 @@ public class ConnectionActivity extends AppCompatActivity {
                 //unbindService(mServiceConnection); //Is this necessary?!
             }
         });
-        //TEST
+        //TEST test2
     } //onCreate()
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
