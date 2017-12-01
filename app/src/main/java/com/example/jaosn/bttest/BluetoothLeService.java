@@ -15,6 +15,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,7 +61,7 @@ public class BluetoothLeService extends Service {
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
-                        mBluetoothGatt.discoverServices());
+                        mBluetoothGatt.discoverServices()); //Triggers callback if true
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED;
@@ -75,6 +76,7 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
                 Log.d("onServicesDiscovered", "Discovered services");
+                //Do I want to fetch the services here?
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
@@ -97,6 +99,7 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            Log.d("onCharacteristicChanged", characteristic.getValue().toString());
             //new code
             //characteristic.getValue();
         }
@@ -111,7 +114,7 @@ public class BluetoothLeService extends Service {
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
         //New code
-        intent.putExtra("Characteristic",characteristic);
+        //intent.putExtra("Characteristic",characteristic);
         sendBroadcast(intent);
     }
 

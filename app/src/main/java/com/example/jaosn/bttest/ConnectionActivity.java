@@ -35,13 +35,16 @@ public class ConnectionActivity extends AppCompatActivity {
     private BluetoothGatt mBluetoothGatt;
     private BluetoothLeService mBluetoothLeService;
 
-    private ArrayList<String> theList;
+    private ArrayList<String> servicesList;
     private List<BluetoothGattService> services;
-    private ListView lv;
+    private ListView lvServices;
+    private ListView lvCharacteristics;
     private ArrayAdapter<String> arrayAdapter;
+    private ArrayAdapter<String> arrayAdapterCharas;
     private ArrayAdapter<BluetoothGattCharacteristic> charayAdapter;
     private List<BluetoothGattCharacteristic> charaList;
     private ArrayList<String> uuids;
+    private ArrayList<String> charaStringList;
 
 
     // Code to manage Service lifecycle.
@@ -71,7 +74,16 @@ public class ConnectionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connection);
-        setTitle("Services");
+
+        //Get the intent that started this activity, and get extra
+        Intent intent = getIntent();
+        if(intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice") != null){
+            device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
+        }
+        deviceName = device.getName();
+        deviceAddress = device.getAddress();
+
+        setTitle(deviceName + " Services");
 
         //Register broadcast receiver and bind connection service to activity
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
@@ -80,70 +92,48 @@ public class ConnectionActivity extends AppCompatActivity {
         Log.d("BluetoothLeService","Service bind");
 
 
-        //Get the intent that started this activity, and get extra
-        Intent intent = getIntent();
-        deviceName = intent.getStringExtra("com.example.jaosn.bttest.deviceName");
-        deviceAddress = intent.getStringExtra("com.example.jaosn.bttest.deviceAddress");
-        if(intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice") != null){
-            device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
-        }
-
-        TextView tv = (TextView)findViewById(R.id.textView);
-        tv.setText(deviceName);
-
-        // The button, connects and returns services.
-        final Button button = (Button) findViewById(R.id.connect);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mBluetoothLeService.connect(deviceAddress)){
-                    Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
-                }
-                Log.d("onClick", "connectGatt");
-            }
-        });
-
-
 
         // Populating listview with service UUIDs.
-        theList = new ArrayList<>();
-        arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, theList);
-        lv = findViewById(R.id.services);
-        lv.setAdapter(arrayAdapter);
+        servicesList = new ArrayList<>();
+        arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, servicesList);
+        lvServices = findViewById(R.id.services);
+        lvServices.setAdapter(arrayAdapter);
 
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        // Populating listview with characteristics UUIDs.
+        charaStringList = new ArrayList<>();
+        arrayAdapterCharas = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,charaStringList);
+        lvCharacteristics = findViewById(R.id.characteristic);
+        lvCharacteristics.setAdapter(arrayAdapterCharas);
+
+
+        lvServices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                arrayAdapterCharas.clear();
                 charaList = services.get(position).getCharacteristics(); //List with characteristics
+                charaStringList = getCharacteristicsToList(charaList); //List with string UUIDs of characteristics
+                arrayAdapterCharas.notifyDataSetChanged();
                 Log.d("getCharacteristics()","Got characteristics!");
 
-
                 //HACK TEST, this actually works
-                mBluetoothLeService.readCharacteristic(charaList.get(1));
-
+                //mBluetoothLeService.readCharacteristic(charaList.get(1));
                 // END HACK TEST
-
-                /*
-                // This is used to start characteristicActivity
-                Intent intent = new Intent(getBaseContext(), CharacteristicActivity.class);
-                intent.putExtra("com.example.jaosn.bttest.BtDevice",device);
-                intent.putExtra("com.example.jaosn.bttest.size", Integer.toString(charaList.size()));
-
-                for(int i = 0; i < charaList.size();i++){
-                    intent.putExtra("com.example.jaosn.bttest.characteristicuuid"+i,charaList.get(i).getUuid().toString());
-                }
-
-                for(int i = 0; i < charaList.size();i++){
-                    intent.putExtra("com.example.jaosn.bttest.characteristic"+i,charaList.get(i));
-                }
-
+               /*
+                Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
+                intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
                 startActivity(intent); */
-                //unbindService(mServiceConnection); //Is this necessary?!
             }
         });
-        //TEST test2
+
+
+        lvCharacteristics.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Log.d("onItemClick charalist","Attempting to read characteristic");
+                mBluetoothLeService.readCharacteristic(charaList.get(i));
+            }
+        });
+
     } //onCreate()
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
@@ -156,9 +146,11 @@ public class ConnectionActivity extends AppCompatActivity {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)){
                 //Get services and add the UUIDs to a list using getServicesToList
                 services = mBluetoothLeService.getSupportedGattServices();
-                theList = getServicesToList(services);
+                servicesList = getServicesToList(services); //For display in listview
                 arrayAdapter.notifyDataSetChanged();
                 Log.d("Broadcast","Services discovered datasetchange");
+            } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)){
+                Log.d("Broadcast!","Data available!");
             }
         }
     };
@@ -167,9 +159,17 @@ public class ConnectionActivity extends AppCompatActivity {
     private ArrayList<String> getServicesToList(List<BluetoothGattService> serviceList){
         for(BluetoothGattService service : serviceList){
             String uuid = service.getUuid().toString();
-            theList.add(uuid);
+            servicesList.add(uuid);
         }
-        return theList;
+        return servicesList;
+    }
+
+    private ArrayList<String> getCharacteristicsToList(List<BluetoothGattCharacteristic> charaList){
+        for(BluetoothGattCharacteristic chara : charaList){
+            String uuid = chara.getUuid().toString();
+            charaStringList.add(uuid);
+        }
+        return charaStringList;
     }
 
 

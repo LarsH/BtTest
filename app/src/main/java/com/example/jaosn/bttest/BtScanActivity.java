@@ -7,12 +7,16 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,7 +26,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 import java.util.ArrayList;
 
-public class BtScanActivity extends Activity {
+public class BtScanActivity extends AppCompatActivity {
 
     private static int REQUEST_ENABLE_BT = 2;
     private BluetoothAdapter mBluetoothAdapter;
@@ -35,6 +39,30 @@ public class BtScanActivity extends Activity {
     private ListView lv;
     private ArrayAdapter<BluetoothDevice> arrayAdapter;
 
+    private BluetoothLeService mBluetoothLeService;
+
+    // Code to manage Service lifecycle.
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+            mBluetoothLeService = ((BluetoothLeService.LocalBinder)service).getService();
+            if (mBluetoothLeService != null) {
+                // Automatically connects to the device upon successful start-up initialization.
+                Toast.makeText(getApplicationContext(), "Service initialized", Toast.LENGTH_SHORT).show();
+                Log.d("BluetoothLeService","Service initialized");
+            }
+            if (!mBluetoothLeService.initialize()) {
+                finish();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mBluetoothLeService = null;
+            finish();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +72,9 @@ public class BtScanActivity extends Activity {
 
         mBtDevices = new ArrayList<>(); //Initialize arrayList to store found devices
         //requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
 
         //Initialize BT adapter
         //mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -110,15 +141,13 @@ public class BtScanActivity extends Activity {
                 Toast.makeText(getApplicationContext(),
                         "Click ListItem Number " + position, Toast.LENGTH_SHORT).show();
                 BluetoothDevice device = mBtDevices.get(position);
-                deviceAddress = device.getAddress();
-                deviceName = device.getName();
+
                 Intent intent = new Intent(getApplicationContext(), ConnectionActivity.class);
-                intent.putExtra("com.example.jaosn.bttest.deviceAddress", deviceAddress);
-                intent.putExtra("com.example.jaosn.bttest.deviceName", deviceName);
                 intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
                 startActivity(intent);
                 unregisterReceiver(bReceiver);
                 mBluetoothAdapter.cancelDiscovery();
+                mBluetoothLeService.connect(mBtDevices.get(position).getAddress());
                 //mBluetoothAdapter.disable();
             }
         });
@@ -133,7 +162,6 @@ public class BtScanActivity extends Activity {
             //Log.d("intent.getAction()", "got action from intent");
             if (BluetoothDevice.ACTION_FOUND.equals(action)) { //Unnecessary if statement ?
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
                 deviceName = device.getName(); //Pass these on in an intent
                 deviceAddress = device.getAddress();
                 //Toast.makeText(context, deviceName + " found", Toast.LENGTH_SHORT).show();

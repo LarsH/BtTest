@@ -74,40 +74,14 @@ public class CharacteristicActivity extends AppCompatActivity {
         setTitle("Characteristics");
         lv = findViewById(R.id.characteristics);
 
-        /* //HAck TEST
-        mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        BluetoothAdapter mBluetoothAdapter = mBluetoothManager.getAdapter();
-
-        // END HACK */
-
-        //myReceiver = new BtScanActivity.MyReceiver();
+        Intent intent = getIntent();
+        BluetoothDevice device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
+        deviceAddress = device.getAddress();
 
         registerReceiver(mGattUpdateReceiver, ConnectionActivity.makeGattUpdateIntentFilter());
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
 
-
-        //Get the intent that started this activity, and get extra
-        Intent intent = getIntent();
-        size = Integer.parseInt(intent.getStringExtra("com.example.jaosn.bttest.size"));
-
-        charaStringList = new ArrayList<>();
-        for(int i = 0; i < size; i++){
-            String tmp = intent.getExtras().getString("com.example.jaosn.bttest.characteristicuuid"+i);
-            charaStringList.add(tmp);
-        }
-
-        charaList = new ArrayList<>();
-        for(int i = 0; i < size; i++){
-            chara = intent.getExtras().getParcelable("com.example.jaosn.bttest.characteristic"+i);
-            charaList.add(chara);
-        }
-
-
-        if(intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice") != null){
-            device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
-            deviceAddress = device.getAddress();
-        }
 
         adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_list_item_1, charaStringList);
         lv.setAdapter(adapter);
@@ -115,22 +89,7 @@ public class CharacteristicActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //data = charaList.get(position).getValue();
-
-                mBluetoothLeService.readCharacteristic(charaList.get(position));
-                mBluetoothLeService.connect(deviceAddress);
-                BluetoothGattService test = charaList.get(position).getService(); //This returns null, not good
-                Log.d("Try to get service: ",test.toString());
-                if(charaList.get(position).getValue() != null){
-                    data = charaList.get(position).getValue();
-                    Log.d("getValue()", "Got Value: " + data.toString());
-                } else {
-                    Log.d("getValue()","Value read is null");
-                }
-                Log.d("onItemClick",Integer.toString(position));
-                Log.d("onItemClick got",charaList.get(position).toString());
-                //Log.d("getValue", data.toString());
-                //Toast.makeText(getApplicationContext(), "Data: " + data.toString(), Toast.LENGTH_SHORT).show();
+                //Do nothing so far!
                 }
             }
         );
@@ -143,10 +102,6 @@ public class CharacteristicActivity extends AppCompatActivity {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.d("Broadcast","Data available");
-                intent = getIntent();
-                BluetoothGattCharacteristic characteristic = intent.getExtras().getParcelable("Characteristic");
-                data = characteristic.getValue();
-                Log.d("Data read: ", data.toString());
             }
         }
     };
