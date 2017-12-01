@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">BtTest</string>
+    <string name="scan">Scan</string>
+    <string name="stop">Stop</string>
+    <string name="con">Connect</string>
+    <string name="ble_not_supported">BLE not supported!</string>
+    <string name="buttext">Button clicked</string>
+    <string name="device_found">Found a device!</string>
+
+
+</resources>
