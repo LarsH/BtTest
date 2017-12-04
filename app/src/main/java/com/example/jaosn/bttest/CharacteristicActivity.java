@@ -20,7 +20,10 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.github.mikephil.charting.charts.LineChart;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -42,6 +45,10 @@ public class CharacteristicActivity extends AppCompatActivity {
 
     private BluetoothLeService mBluetoothLeService;
     private BluetoothManager mBluetoothManager;
+
+    private LineChart chart;
+
+    private TextView tv;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -72,29 +79,39 @@ public class CharacteristicActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_characteristic);
         setTitle("Characteristics");
-        lv = findViewById(R.id.characteristics);
 
+        /* for the chart
+        chart = findViewById(R.id.chart);
+        XML
+        <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+        */
+
+        //Get the intent that started this activity
         Intent intent = getIntent();
         BluetoothDevice device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
         deviceAddress = device.getAddress();
+        int position = Integer.parseInt(intent.getStringExtra("com.example.jaosn.bttest.position"));
+        Log.d("CharacteristicActivity","getIntent()");
 
+        //Bind service to this activity
         registerReceiver(mGattUpdateReceiver, ConnectionActivity.makeGattUpdateIntentFilter());
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        Log.d("CharacteristicActivity","Service bind!");
 
-
-        adapter = new ArrayAdapter<>(getBaseContext(), android.R.layout.simple_list_item_1, charaStringList);
-        lv.setAdapter(adapter);
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //Do nothing so far!
-                }
-            }
-        );
+        tv = findViewById(R.id.dataField);
+        
 
     } //onCreate
+
+    public void screenTapped(View view) {
+        mBluetoothLeService.readSavedCharacteristic();
+        data = mBluetoothLeService.returnDataToActivity();
+        tv.setText(new String(data));
+    }
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -102,6 +119,11 @@ public class CharacteristicActivity extends AppCompatActivity {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.d("Broadcast","Data available");
+            } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)){
+                Log.d("CharacteristicActivity","Broadcast data available!");
+                //Get the bundle in intent
+                Bundle b = intent.getBundleExtra("Data");
+                //data = b.getByte(data);
             }
         }
     };

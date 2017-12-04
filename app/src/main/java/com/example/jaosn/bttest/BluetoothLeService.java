@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -46,6 +47,11 @@ public class BluetoothLeService extends Service {
             "com.example.jaosn.bttest.ACTION_DATA_AVAILABLE";
     public final static String EXTRA_DATA =
             "com.example.jaosn.bttest.EXTRA_DATA";
+    public final static String CHARACTERISTIC_DATA =
+            "com.example.jaosn.bttest.CHARACTERISTIC_DATA";
+
+    //TEST method to "save" this characteristic we want to read from
+    private BluetoothGattCharacteristic thisCharacteristic;
 
 
     // Implements callback methods for GATT events that the app cares about.  For example,
@@ -88,10 +94,25 @@ public class BluetoothLeService extends Service {
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-                Log.d("The Service, callback","onCharacteristicRead callback");
-                Log.d("The value: ",characteristic.getValue().toString());
+                Log.d("Service","onCharacteristicRead callback");
+                byte[] tmp = characteristic.getValue();
+                byte[] tmp2 = thisCharacteristic.getValue();
+
+
+                // Test method to return data to activity
+                returnDataToActivity();
+                Log.d("Service","Value " + new String(tmp));
+                Log.d("Service", "Value from save " + new String(tmp2));
+                /*
+                // HACK! Call a function that reads 'continuously'
+                // Put data in bundle and pass in broadcast intent.
+                Intent intent = new Intent(CHARACTERISTIC_DATA);
+                Bundle b = new Bundle();
+                b.putByteArray("Data",characteristic.getValue());
+                intent.putExtra("Data",b);
+                sendBroadcast(intent); */
             } else {
-                Log.d("The Service, callback", "Read failed!");
+                Log.d("Service", "onCharacteristicread: Read failed!");
             }
         }
 
@@ -246,7 +267,22 @@ public class BluetoothLeService extends Service {
             return;
         }
         mBluetoothGatt.readCharacteristic(characteristic);
-        Log.d("The Service","readCharacteristic() " + characteristic.toString());
+        if (thisCharacteristic != characteristic)
+            saveCharacteristic(characteristic);
+        Log.d("Service","readCharacteristic() " + characteristic.toString());
+    }
+
+    public BluetoothGattCharacteristic saveCharacteristic(BluetoothGattCharacteristic characteristic){
+        thisCharacteristic = characteristic;
+        return thisCharacteristic;
+    }
+
+    public void readSavedCharacteristic(){
+        readCharacteristic(thisCharacteristic);
+    }
+
+    public byte[] returnDataToActivity(){
+        return thisCharacteristic.getValue();
     }
 
 

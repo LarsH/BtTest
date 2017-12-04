@@ -113,7 +113,7 @@ public class ConnectionActivity extends AppCompatActivity {
                 charaList = services.get(position).getCharacteristics(); //List with characteristics
                 charaStringList = getCharacteristicsToList(charaList); //List with string UUIDs of characteristics
                 arrayAdapterCharas.notifyDataSetChanged();
-                Log.d("getCharacteristics()","Got characteristics!");
+                Log.d("ConnectionActivity","getCharacteristics()");
 
                 //HACK TEST, this actually works
                 //mBluetoothLeService.readCharacteristic(charaList.get(1));
@@ -131,10 +131,17 @@ public class ConnectionActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("onItemClick charalist","Attempting to read characteristic");
                 mBluetoothLeService.readCharacteristic(charaList.get(i));
+
+                Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
+                intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
+                intent.putExtra("com.example.jaosn.bttest.position", Integer.toString(i));
+                startActivity(intent);
             }
         });
 
     } //onCreate()
+
+
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -142,15 +149,17 @@ public class ConnectionActivity extends AppCompatActivity {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_SHORT).show();
-                Log.d("Broadcast","Connected");
+                Log.d("ConnectionActivity","Broadcast connected");
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)){
                 //Get services and add the UUIDs to a list using getServicesToList
                 services = mBluetoothLeService.getSupportedGattServices();
                 servicesList = getServicesToList(services); //For display in listview
                 arrayAdapter.notifyDataSetChanged();
-                Log.d("Broadcast","Services discovered datasetchange");
+                Log.d("ConnectionActivity","Broadcast services discovered datasetchange");
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)){
-                Log.d("Broadcast!","Data available!");
+                Log.d("ConnectionActivity","Broadcast data available!");
+            } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)){
+                Log.d("ConnectionActivity","Broadcast CHARACTERISTIC_DATA");
             }
         }
     };
