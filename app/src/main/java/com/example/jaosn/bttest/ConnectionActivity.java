@@ -18,21 +18,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 
 public class ConnectionActivity extends AppCompatActivity {
     private String deviceName;
     private String deviceAddress;
     private BluetoothDevice device;
-    private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothGatt mBluetoothGatt;
     private BluetoothLeService mBluetoothLeService;
 
     private ArrayList<String> servicesList;
@@ -41,9 +37,7 @@ public class ConnectionActivity extends AppCompatActivity {
     private ListView lvCharacteristics;
     private ArrayAdapter<String> arrayAdapter;
     private ArrayAdapter<String> arrayAdapterCharas;
-    private ArrayAdapter<BluetoothGattCharacteristic> charayAdapter;
     private List<BluetoothGattCharacteristic> charaList;
-    private ArrayList<String> uuids;
     private ArrayList<String> charaStringList;
 
 
@@ -115,13 +109,6 @@ public class ConnectionActivity extends AppCompatActivity {
                 arrayAdapterCharas.notifyDataSetChanged();
                 Log.d("ConnectionActivity","getCharacteristics()");
 
-                //HACK TEST, this actually works
-                //mBluetoothLeService.readCharacteristic(charaList.get(1));
-                // END HACK TEST
-               /*
-                Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
-                intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
-                startActivity(intent); */
             }
         });
 
@@ -134,8 +121,8 @@ public class ConnectionActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
                 intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
-                intent.putExtra("com.example.jaosn.bttest.position", Integer.toString(i));
                 startActivity(intent);
+                unregisterReceiver(mGattUpdateReceiver); //NEW
             }
         });
 
@@ -189,6 +176,13 @@ public class ConnectionActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         return intentFilter;
+    }
+
+    //NEW
+    @Override
+    protected void onResume(){
+        super.onResume();
+        registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
     }
 
 } //Class

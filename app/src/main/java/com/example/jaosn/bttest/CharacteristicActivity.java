@@ -1,12 +1,7 @@
 package com.example.jaosn.bttest;
 
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,38 +12,29 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.github.mikephil.charting.charts.LineChart;
-
-import java.sql.Connection;
-import java.util.ArrayList;
-
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 
 
 public class CharacteristicActivity extends AppCompatActivity {
-    private ListView lv;
-    private int size;
-    private String tmp;
-    private ArrayList<BluetoothGattCharacteristic> charaList;
-    private ArrayList<String> charaStringList;
-    private BluetoothGattCharacteristic chara;
     private BluetoothDevice device;
     private String deviceAddress;
-    private ArrayAdapter<String> adapter;
     private byte[] data;
-    private BtScanActivity.MyReceiver myReceiver;
-
     private BluetoothLeService mBluetoothLeService;
-    private BluetoothManager mBluetoothManager;
+    private TextView tv;
 
     private LineChart chart;
+    private List<Entry> entries;
+    private ArrayList<byte[]> dataArray;
 
-    private TextView tv;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -80,20 +66,14 @@ public class CharacteristicActivity extends AppCompatActivity {
         setContentView(R.layout.activity_characteristic);
         setTitle("Characteristics");
 
-        /* for the chart
+        //for the chart
         chart = findViewById(R.id.chart);
-        XML
-        <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-        */
+        chart.setBackgroundColor(000);
 
         //Get the intent that started this activity
         Intent intent = getIntent();
         BluetoothDevice device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
         deviceAddress = device.getAddress();
-        int position = Integer.parseInt(intent.getStringExtra("com.example.jaosn.bttest.position"));
         Log.d("CharacteristicActivity","getIntent()");
 
         //Bind service to this activity
@@ -103,15 +83,60 @@ public class CharacteristicActivity extends AppCompatActivity {
         Log.d("CharacteristicActivity","Service bind!");
 
         tv = findViewById(R.id.dataField);
-        
+        //entries = new ArrayList<>();
+        dataArray = new ArrayList<>();
+
+        entries = new ArrayList<>();
+
+
+
+        Button button = findViewById(R.id.plotbutton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                entries = formatToPlot(dataArray);
+                LineDataSet dataSet = new LineDataSet(entries, "Test");
+                dataSet.setColor(R.color.ecg_Green); //This didn't work very well
+                final LineData lineData = new LineData(dataSet);
+                chart.setData(lineData);
+                chart.invalidate(); // refresh
+            }
+        });
+
 
     } //onCreate
 
     public void screenTapped(View view) {
         mBluetoothLeService.readSavedCharacteristic();
         data = mBluetoothLeService.returnDataToActivity();
-        tv.setText(new String(data));
+        String s = Integer.toString(byteToInt(data));
+        tv.setText(s);
+        dataArray.add(data);
     }
+
+
+    public List<Entry> formatToPlot(ArrayList<byte[]> dataArray){
+        int i = 0;
+        for(byte[] data : dataArray) {
+            int y = byteToInt(data);
+            entries.add(new Entry(i,y));
+            i = i+1;
+        }
+        return entries;
+    }
+
+    public int byteToInt(byte[] data){
+        int msb = data[1];
+        int lsb = data[0];
+        if(msb < 0){
+            msb += 256;
+        }
+        if(lsb < 0){
+            lsb += 256;
+        }
+        return 256*msb + lsb;
+    }
+
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -119,11 +144,11 @@ public class CharacteristicActivity extends AppCompatActivity {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.d("Broadcast","Data available");
-            } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)){
-                Log.d("CharacteristicActivity","Broadcast data available!");
-                //Get the bundle in intent
-                Bundle b = intent.getBundleExtra("Data");
-                //data = b.getByte(data);
+            } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)) {
+                Log.d("CharacteristicActivity", "Broadcast data available!");
+            } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
+                data = mBluetoothLeService.returnDataToActivity();
+                dataArray.add(data); //END NEW
             }
         }
     };

@@ -12,13 +12,10 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -49,6 +46,8 @@ public class BluetoothLeService extends Service {
             "com.example.jaosn.bttest.EXTRA_DATA";
     public final static String CHARACTERISTIC_DATA =
             "com.example.jaosn.bttest.CHARACTERISTIC_DATA";
+    public final static String CHARACTERISTIC_CHANGED =
+            "com.example.jaosn.bttest.CHARACTERISTIC_CHANGED";
 
     //TEST method to "save" this characteristic we want to read from
     private BluetoothGattCharacteristic thisCharacteristic;
@@ -81,8 +80,7 @@ public class BluetoothLeService extends Service {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
-                Log.d("onServicesDiscovered", "Discovered services");
-                //Do I want to fetch the services here?
+                Log.d("Service", "onServicesDiscovered: discovered services");
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
@@ -95,22 +93,11 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
                 Log.d("Service","onCharacteristicRead callback");
+                //Test the read
                 byte[] tmp = characteristic.getValue();
                 byte[] tmp2 = thisCharacteristic.getValue();
-
-
-                // Test method to return data to activity
-                returnDataToActivity();
                 Log.d("Service","Value " + new String(tmp));
                 Log.d("Service", "Value from save " + new String(tmp2));
-                /*
-                // HACK! Call a function that reads 'continuously'
-                // Put data in bundle and pass in broadcast intent.
-                Intent intent = new Intent(CHARACTERISTIC_DATA);
-                Bundle b = new Bundle();
-                b.putByteArray("Data",characteristic.getValue());
-                intent.putExtra("Data",b);
-                sendBroadcast(intent); */
             } else {
                 Log.d("Service", "onCharacteristicread: Read failed!");
             }
@@ -119,7 +106,8 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            //broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            broadcastUpdate(CHARACTERISTIC_CHANGED); //NEW
             Log.d("onCharacteristicChanged", characteristic.getValue().toString());
             //new code
             //characteristic.getValue();
