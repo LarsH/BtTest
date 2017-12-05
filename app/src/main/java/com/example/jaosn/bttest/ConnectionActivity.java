@@ -118,7 +118,6 @@ public class ConnectionActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("onItemClick charalist","Attempting to read characteristic");
                 mBluetoothLeService.readCharacteristic(charaList.get(i));
-
                 Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
                 intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
                 startActivity(intent);
@@ -175,6 +174,7 @@ public class ConnectionActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(BluetoothLeService.CHARACTERISTIC_CHANGED);
         return intentFilter;
     }
 
@@ -184,5 +184,6 @@ public class ConnectionActivity extends AppCompatActivity {
         super.onResume();
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
     }
+
 
 } //Class

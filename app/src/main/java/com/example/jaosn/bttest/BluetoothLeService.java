@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -15,6 +16,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -48,6 +50,8 @@ public class BluetoothLeService extends Service {
             "com.example.jaosn.bttest.CHARACTERISTIC_DATA";
     public final static String CHARACTERISTIC_CHANGED =
             "com.example.jaosn.bttest.CHARACTERISTIC_CHANGED";
+    public final static String CHARACTERISTIC_WRITE =
+            "com.example.jaosn.bttest.CHARACTERISTIC_WRITE";
 
     //TEST method to "save" this characteristic we want to read from
     private BluetoothGattCharacteristic thisCharacteristic;
@@ -93,11 +97,11 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
                 Log.d("Service","onCharacteristicRead callback");
-                //Test the read
+                /* //Test the read
                 byte[] tmp = characteristic.getValue();
                 byte[] tmp2 = thisCharacteristic.getValue();
                 Log.d("Service","Value " + new String(tmp));
-                Log.d("Service", "Value from save " + new String(tmp2));
+                Log.d("Service", "Value from save " + new String(tmp2)); */
             } else {
                 Log.d("Service", "onCharacteristicread: Read failed!");
             }
@@ -108,9 +112,30 @@ public class BluetoothLeService extends Service {
                                             BluetoothGattCharacteristic characteristic) {
             //broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             broadcastUpdate(CHARACTERISTIC_CHANGED); //NEW
-            Log.d("onCharacteristicChanged", characteristic.getValue().toString());
+            Log.d("Service","Characteristic changed");
             //new code
             //characteristic.getValue();
+        }
+        @Override
+        public void onCharacteristicWrite (BluetoothGatt gatt,
+                                    BluetoothGattCharacteristic characteristic,
+                                    int status){
+            if(status == BluetoothGatt.GATT_SUCCESS){
+                broadcastUpdate(CHARACTERISTIC_WRITE);
+                Log.d("Service","onCharacteristicWrite callback");
+                Log.d("Service","Write successful");
+            }
+            Log.d("Service","Write failed");
+        }
+        @Override
+        public void onDescriptorWrite (BluetoothGatt gatt,
+                                BluetoothGattDescriptor descriptor,
+                                int status){
+            if(status == BluetoothGatt.GATT_SUCCESS){
+                Log.d("Service","Written descriptor");
+            } else {
+                Log.d("Service","Descriptor write failed");
+            }
         }
     };
 
@@ -271,6 +296,25 @@ public class BluetoothLeService extends Service {
 
     public byte[] returnDataToActivity(){
         return thisCharacteristic.getValue();
+    }
+
+    public void turnOnNotification(){
+        mBluetoothGatt.setCharacteristicNotification(thisCharacteristic, true);
+        List<BluetoothGattDescriptor> descriptorList = thisCharacteristic.getDescriptors();
+            UUID uuid = descriptorList.get(0).getUuid();
+            BluetoothGattDescriptor descriptor = thisCharacteristic.getDescriptor(uuid);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            mBluetoothGatt.writeDescriptor(descriptor);
+    }
+
+    public void turnOffNotification(){
+        mBluetoothGatt.setCharacteristicNotification(thisCharacteristic, false);
+        List<BluetoothGattDescriptor> descriptorList = thisCharacteristic.getDescriptors();
+        UUID uuid = descriptorList.get(0).getUuid();
+        BluetoothGattDescriptor descriptor = thisCharacteristic.getDescriptor(uuid);
+        descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+        mBluetoothGatt.writeDescriptor(descriptor);
+
     }
 
 

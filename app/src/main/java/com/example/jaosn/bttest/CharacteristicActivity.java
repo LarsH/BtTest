@@ -13,8 +13,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +79,7 @@ public class CharacteristicActivity extends AppCompatActivity {
         deviceAddress = device.getAddress();
         Log.d("CharacteristicActivity","getIntent()");
 
-        //Bind service to this activity
+        //Register intent receiver and bind service to this activity
         registerReceiver(mGattUpdateReceiver, ConnectionActivity.makeGattUpdateIntentFilter());
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
@@ -96,18 +99,36 @@ public class CharacteristicActivity extends AppCompatActivity {
             public void onClick(View v) {
                 entries = formatToPlot(dataArray);
                 LineDataSet dataSet = new LineDataSet(entries, "Test");
-                dataSet.setColor(R.color.ecg_Green); //This didn't work very well
+                dataSet.setColor(getResources().getColor(R.color.ecg_Green)); //This didn't work very well
+                dataSet.setLineWidth(3f);
+                chart.setBackgroundColor(getResources().getColor(R.color.black));
                 final LineData lineData = new LineData(dataSet);
                 chart.setData(lineData);
                 chart.invalidate(); // refresh
             }
         });
 
+        ToggleButton toggle = (ToggleButton) findViewById(R.id.notificationEnable);
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    // The toggle is enabled
+                    dataArray.clear();
+                    mBluetoothLeService.turnOnNotification();
+                } else {
+                    // The toggle is disabled
+                    mBluetoothLeService.turnOffNotification();
+                }
+            }
+        });
+
+
 
     } //onCreate
 
     public void screenTapped(View view) {
-        mBluetoothLeService.readSavedCharacteristic();
+        mBluetoothLeService.readSavedCharacteristic(); //Is this necessary?
+
         data = mBluetoothLeService.returnDataToActivity();
         String s = Integer.toString(byteToInt(data));
         tv.setText(s);
@@ -144,13 +165,29 @@ public class CharacteristicActivity extends AppCompatActivity {
             final String action = intent.getAction();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.d("Broadcast","Data available");
+                Log.d("CharacteristicActivity","Data available broadcast");
             } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)) {
                 Log.d("CharacteristicActivity", "Broadcast data available!");
             } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
                 data = mBluetoothLeService.returnDataToActivity();
                 dataArray.add(data); //END NEW
+                Log.d("CharacteristicActivity","Notification on changed value");
             }
         }
     };
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        //mBluetoothLeService.turnOffNotification();
+        unregisterReceiver(mGattUpdateReceiver);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        //mBluetoothLeService.turnOffNotification();
+        unregisterReceiver(mGattUpdateReceiver);
+    }
 
 } //Class
