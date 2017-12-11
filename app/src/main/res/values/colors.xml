@@ -5,4 +5,6 @@
     <color name="colorAccent">#FF4081</color>
     <color name="ecg_Green">#77f442</color>
     <color name="black">#000000</color>
+    <color name="channel0">#ff00ff</color>
+    <color name="channel1">#ff3300</color>
 </resources>

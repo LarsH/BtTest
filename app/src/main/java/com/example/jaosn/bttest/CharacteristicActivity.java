@@ -25,6 +25,7 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 
 public class CharacteristicActivity extends AppCompatActivity {
@@ -37,6 +38,8 @@ public class CharacteristicActivity extends AppCompatActivity {
     private LineChart chart;
     private List<Entry> entries;
     private ArrayList<byte[]> dataArray;
+    private ArrayList<ArrayList<Entry>> multiChannelList;
+    private ArrayList<ArrayList<Entry>> listOfEntries;
 
 
     // Code to manage Service lifecycle.
@@ -72,6 +75,8 @@ public class CharacteristicActivity extends AppCompatActivity {
         //for the chart
         chart = findViewById(R.id.chart);
         chart.setBackgroundColor(000);
+        chart.setNoDataText("");
+        // ADD to XML to rotate android:rotation="90"
 
         //Get the intent that started this activity
         Intent intent = getIntent();
@@ -92,19 +97,42 @@ public class CharacteristicActivity extends AppCompatActivity {
         entries = new ArrayList<>();
 
 
+        multiChannelList = new ArrayList<>();
+
+
 
         Button button = findViewById(R.id.plotbutton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                entries = formatToPlot(dataArray);
+                /*entries = formatToPlot(dataArray);
                 LineDataSet dataSet = new LineDataSet(entries, "Test");
-                dataSet.setColor(getResources().getColor(R.color.ecg_Green)); //This didn't work very well
+                dataSet.setColor(getResources().getColor(R.color.ecg_Green));
                 dataSet.setLineWidth(3f);
                 chart.setBackgroundColor(getResources().getColor(R.color.black));
                 final LineData lineData = new LineData(dataSet);
                 chart.setData(lineData);
+                chart.invalidate(); // refresh */
+
+                //NEW, this is not correct
+                chart.clear(); //Clear before plot
+                chart.invalidate();
+                multiChannelList = parseDataIntoLists(dataArray);
+                LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
+                channel0.setColor(getResources().getColor(R.color.channel0));
+                LineDataSet channel1 = new LineDataSet(multiChannelList.get(1), "Channel 1");
+                channel1.setColor(getResources().getColor(R.color.channel1));
+                LineDataSet channel2 = new LineDataSet(multiChannelList.get(2), "Channel 2");
+                channel2.setColor(getResources().getColor(R.color.ecg_Green));
+                List<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(channel0);
+                dataSets.add(channel1);
+                dataSets.add(channel2);
+
+                LineData data = new LineData(dataSets);
+                chart.setData(data);
                 chart.invalidate(); // refresh
+
             }
         });
 
@@ -158,6 +186,41 @@ public class CharacteristicActivity extends AppCompatActivity {
         return 256*msb + lsb;
     }
 
+    public ArrayList<ArrayList<Entry>> parseDataIntoLists(ArrayList<byte[]> dataArray) {
+        Entry tmp;
+        int numChannels = 8;
+        listOfEntries = new ArrayList<ArrayList<Entry>>();
+
+        for(int channel = 0; channel < numChannels; channel++) {
+            // Fix this nicer, if possible...
+            listOfEntries.add(channel, new ArrayList<Entry>());
+        }
+
+        for(byte[] data : dataArray) {
+            int timestamp = (0x10000 * byteToIntAtIndex(data,2)) + byteToIntAtIndex(data,0); //Get timestamp
+            float x = timestamp/(float)0x10000; //Convert system tick to second.
+            for(int channel = 0; channel < numChannels; channel++) {  //Get y value for each channel
+                int y = byteToIntAtIndex(data,4+2*channel);
+                tmp = new Entry(x,y); //Data point for one channel
+                listOfEntries.get(channel).add(tmp);
+            }
+        }
+        return listOfEntries;
+    }
+
+    public int byteToIntAtIndex(byte[] data, int index){
+        int msb = data[index + 1];
+        int lsb = data[index];
+        if(msb < 0){
+            msb += 256;
+        }
+        if(lsb < 0){
+            lsb += 256;
+        }
+        return 256*msb + lsb;
+
+    }
+
 
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -171,6 +234,8 @@ public class CharacteristicActivity extends AppCompatActivity {
             } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
                 data = mBluetoothLeService.returnDataToActivity();
                 dataArray.add(data); //END NEW
+                String s = Integer.toString(byteToInt(data));
+                tv.setText(s);
                 Log.d("CharacteristicActivity","Notification on changed value");
             }
         }
