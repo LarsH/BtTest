@@ -166,6 +166,8 @@ public class CharacteristicActivity extends AppCompatActivity {
 
 
     public void screenTapped(View view){
+        data = mBluetoothLeService.returnDataToActivity();
+        dataArray.add(data);
         if(tapped == 4){
             tapped = 0;
             Toast.makeText(getApplicationContext(), "BAJS", Toast.LENGTH_SHORT).show();
@@ -254,14 +256,12 @@ public class CharacteristicActivity extends AppCompatActivity {
     @Override
     protected void onPause(){
         super.onPause();
-        //mBluetoothLeService.turnOffNotification();
         unregisterReceiver(mGattUpdateReceiver);
     }
 
     @Override
     protected void onDestroy(){
         super.onDestroy();
-        //mBluetoothLeService.turnOffNotification();
         unregisterReceiver(mGattUpdateReceiver);
     }
 

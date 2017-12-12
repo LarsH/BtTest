@@ -125,8 +125,9 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(CHARACTERISTIC_WRITE);
                 Log.d("Service","onCharacteristicWrite callback");
                 Log.d("Service","Write successful");
+            } else {
+                Log.d("Service","Write failed");
             }
-            Log.d("Service","Write failed");
         }
         @Override
         public void onDescriptorWrite (BluetoothGatt gatt,
@@ -215,7 +216,7 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
             return false;
         }
-    /*
+
         // Previously connected device.  Try to reconnect.
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
@@ -226,7 +227,7 @@ public class BluetoothLeService extends Service {
             } else {
                 return false;
             }
-        } */
+        }
 
         final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if (device == null) {
@@ -296,6 +297,7 @@ public class BluetoothLeService extends Service {
     }
 
     public byte[] returnDataToActivity(){
+        Log.d("Service","getValue() from 'saved' characteristic");
         return thisCharacteristic.getValue();
     }
 

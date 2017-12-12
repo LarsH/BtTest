@@ -104,8 +104,10 @@ public class ConnectionActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 arrayAdapterCharas.clear();
                 charaList = services.get(position).getCharacteristics(); //List with characteristics
-                mBluetoothLeService.saveService(services.get(position)); //HACK!!!! NEW
                 charaStringList = getCharacteristicsToList(charaList); //List with string UUIDs of characteristics
+
+                mBluetoothLeService.saveService(services.get(position)); //HACK!!!! NEW
+
                 arrayAdapterCharas.notifyDataSetChanged();
                 Log.d("ConnectionActivity","getCharacteristics()");
             }
@@ -178,13 +180,26 @@ public class ConnectionActivity extends AppCompatActivity {
     }
 
     //NEW
+/*
+    @Override
+    protected void onPause(){
+        super.onPause();
+        unregisterReceiver(mGattUpdateReceiver);
+    } */
+
     @Override
     protected void onResume(){
         super.onResume();
-        /*
-        arrayAdapter.clear();
-        arrayAdapterCharas.clear(); */
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        /*
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        Log.d("BluetoothLeService","Service bind");
+
+        lvServices.setAdapter(arrayAdapter);
+        lvCharacteristics.setAdapter(arrayAdapterCharas);
+        arrayAdapter.notifyDataSetChanged();
+        arrayAdapterCharas.notifyDataSetChanged(); */
     }
 
 
