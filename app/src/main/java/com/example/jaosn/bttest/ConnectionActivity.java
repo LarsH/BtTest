@@ -1,8 +1,7 @@
 package com.example.jaosn.bttest;
 
-import android.bluetooth.BluetoothAdapter;
+
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -182,6 +181,9 @@ public class ConnectionActivity extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
+        /*
+        arrayAdapter.clear();
+        arrayAdapterCharas.clear(); */
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
     }
 

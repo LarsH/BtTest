@@ -28,18 +28,19 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 
+
 public class CharacteristicActivity extends AppCompatActivity {
     private BluetoothDevice device;
     private String deviceAddress;
     private byte[] data;
     private BluetoothLeService mBluetoothLeService;
-    private TextView tv;
 
     private LineChart chart;
     private List<Entry> entries;
     private ArrayList<byte[]> dataArray;
     private ArrayList<ArrayList<Entry>> multiChannelList;
     private ArrayList<ArrayList<Entry>> listOfEntries;
+    private int tapped;
 
 
     // Code to manage Service lifecycle.
@@ -70,7 +71,7 @@ public class CharacteristicActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_characteristic);
-        setTitle("Characteristics");
+        setTitle("Bluetooth ECG");
 
         //for the chart
         chart = findViewById(R.id.chart);
@@ -90,33 +91,23 @@ public class CharacteristicActivity extends AppCompatActivity {
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         Log.d("CharacteristicActivity","Service bind!");
 
-        tv = findViewById(R.id.dataField);
-        //entries = new ArrayList<>();
+        final TextView tv = findViewById(R.id.dataField);
+
+        //Initialize lists to store stuff
         dataArray = new ArrayList<>();
-
         entries = new ArrayList<>();
-
-
         multiChannelList = new ArrayList<>();
 
 
 
-        Button button = findViewById(R.id.plotbutton);
+        final Button button = findViewById(R.id.plotbutton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*entries = formatToPlot(dataArray);
-                LineDataSet dataSet = new LineDataSet(entries, "Test");
-                dataSet.setColor(getResources().getColor(R.color.ecg_Green));
-                dataSet.setLineWidth(3f);
-                chart.setBackgroundColor(getResources().getColor(R.color.black));
-                final LineData lineData = new LineData(dataSet);
-                chart.setData(lineData);
-                chart.invalidate(); // refresh */
+                button.setVisibility(View.GONE);
+                tv.setVisibility(View.GONE);
 
                 //NEW, this is not correct
-                chart.clear(); //Clear before plot
-                chart.invalidate();
                 multiChannelList = parseDataIntoLists(dataArray);
                 LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
                 channel0.setColor(getResources().getColor(R.color.channel0));
@@ -142,7 +133,11 @@ public class CharacteristicActivity extends AppCompatActivity {
                 if (isChecked) {
                     // The toggle is enabled
                     dataArray.clear();
+                    chart.clear(); //Clear before plot
+                    chart.invalidate();
                     mBluetoothLeService.turnOnNotification();
+                    button.setVisibility(View.VISIBLE);
+                    tv.setVisibility(View.VISIBLE);
                 } else {
                     // The toggle is disabled
                     mBluetoothLeService.turnOffNotification();
@@ -150,28 +145,19 @@ public class CharacteristicActivity extends AppCompatActivity {
             }
         });
 
-
-
     } //onCreate
 
-    public void screenTapped(View view) {
-        mBluetoothLeService.readSavedCharacteristic(); //Is this necessary?
 
-        data = mBluetoothLeService.returnDataToActivity();
-        String s = Integer.toString(byteToInt(data));
-        tv.setText(s);
-        dataArray.add(data);
-    }
-
-
-    public List<Entry> formatToPlot(ArrayList<byte[]> dataArray){
-        int i = 0;
-        for(byte[] data : dataArray) {
-            int y = byteToInt(data);
-            entries.add(new Entry(i,y));
-            i = i+1;
+    public void screenTapped(View view){
+        if(tapped == 4){
+            tapped = 0;
+            Toast.makeText(getApplicationContext(), "BAJS", Toast.LENGTH_SHORT).show();
+        } else if(tapped == 3){
+            Toast.makeText(getApplicationContext(), "Snart får du", Toast.LENGTH_SHORT).show();
+            tapped += 1;
+        } else {
+            tapped += 1;
         }
-        return entries;
     }
 
     public int byteToInt(byte[] data){
@@ -235,11 +221,18 @@ public class CharacteristicActivity extends AppCompatActivity {
                 data = mBluetoothLeService.returnDataToActivity();
                 dataArray.add(data); //END NEW
                 String s = Integer.toString(byteToInt(data));
+                TextView tv = findViewById(R.id.dataField);
                 tv.setText(s);
                 Log.d("CharacteristicActivity","Notification on changed value");
             }
         }
     };
+
+    @Override
+    public void onBackPressed(){
+        unregisterReceiver(mGattUpdateReceiver);
+        CharacteristicActivity.super.onBackPressed();
+    }
 
     @Override
     protected void onPause(){

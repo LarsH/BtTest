@@ -1,8 +1,6 @@
-// Working activity lunch seminarium 2
 package com.example.jaosn.bttest;
 
-import android.Manifest;
-import android.app.Activity;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -34,10 +32,12 @@ public class BtScanActivity extends AppCompatActivity {
     private String deviceName;
     private String deviceAddress;
     private ArrayList<BluetoothDevice> mBtDevices;
-    //private ArrayAdapter<BluetoothDevice> mDeviceListAdapter;
-    //private static final int PERMISSION_REQUEST_COARSE_LOCATION = 456;
     private ListView lv;
     private ArrayAdapter<BluetoothDevice> arrayAdapter;
+    /*/Stuff to try to add device name instead of address NEW
+    private ArrayList<String> deviceNameList;
+    private ArrayAdapter<String> nameAdapter;
+    //END */
 
     private BluetoothLeService mBluetoothLeService;
 
@@ -69,9 +69,10 @@ public class BtScanActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bt_scan);
         lv = findViewById(R.id.listview);
+        setTitle("Bluetooth ECG");
 
         mBtDevices = new ArrayList<>(); //Initialize arrayList to store found devices
-        //requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+        //deviceNameList = new ArrayList<>(); //NEW
 
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
@@ -111,11 +112,11 @@ public class BtScanActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), R.string.buttext, Toast.LENGTH_SHORT).show();
                 if (!mBluetoothAdapter.isDiscovering()) {
                     button.setText(R.string.stop);
                     registerReceiver(bReceiver, filter);
                     mBtDevices.clear(); //Clear device list before new scan.
+                    arrayAdapter.notifyDataSetChanged();
                     mBluetoothAdapter.startDiscovery();
                     Log.d("startDiscovery", "Discovery started: " + String.valueOf(mBluetoothAdapter.isDiscovering()));
                     Toast.makeText(getApplicationContext(), "Searching", Toast.LENGTH_SHORT).show();
@@ -124,6 +125,7 @@ public class BtScanActivity extends AppCompatActivity {
                     unregisterReceiver(bReceiver);
                     mBluetoothAdapter.cancelDiscovery();
                     mBtDevices.clear();
+                    arrayAdapter.notifyDataSetChanged();
                     Toast.makeText(getApplicationContext(),"Stopped searching", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -133,8 +135,11 @@ public class BtScanActivity extends AppCompatActivity {
                 this,
                 android.R.layout.simple_list_item_1,
                 mBtDevices);
+        //NEW, try to add name instead
+        //nameAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameList);
 
         lv.setAdapter(arrayAdapter);
+        //lv.setAdapter(nameAdapter); Try to add name instead
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -148,7 +153,6 @@ public class BtScanActivity extends AppCompatActivity {
                 unregisterReceiver(bReceiver);
                 mBluetoothAdapter.cancelDiscovery();
                 mBluetoothLeService.connect(mBtDevices.get(position).getAddress());
-                //mBluetoothAdapter.disable();
             }
         });
 
@@ -164,9 +168,12 @@ public class BtScanActivity extends AppCompatActivity {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 deviceName = device.getName(); //Pass these on in an intent
                 deviceAddress = device.getAddress();
-                //Toast.makeText(context, deviceName + " found", Toast.LENGTH_SHORT).show();
                 mBtDevices.add(device); //Adding the found device to the array adapter
                 arrayAdapter.notifyDataSetChanged();
+
+                /*
+                deviceNameList.add(deviceName);
+                nameAdapter.notifyDataSetChanged(); */ //Try to add name instead
             }
         }
     }
