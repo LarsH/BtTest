@@ -55,6 +55,7 @@ public class BluetoothLeService extends Service {
 
     //TEST method to "save" this characteristic we want to read from
     private BluetoothGattCharacteristic thisCharacteristic;
+    private BluetoothGattService thisService;
 
 
     // Implements callback methods for GATT events that the app cares about.  For example,
@@ -315,6 +316,27 @@ public class BluetoothLeService extends Service {
         descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
         mBluetoothGatt.writeDescriptor(descriptor);
 
+    }
+
+    public void enableECG(boolean enable){
+        byte[] value = new byte[1];
+        BluetoothGattCharacteristic enableECG = thisService.getCharacteristic(UUID.fromString("F0001121-0451-4000-B000-000000000000"));
+        if(enable){
+            value[0] = (byte) 1;
+            //Write '1' to characteristic in enable service
+            enableECG.setValue(value);
+            mBluetoothGatt.writeCharacteristic(enableECG);
+        } else {
+            value[0] = (byte) 0;
+            //Write '0' to characteristic in enable service
+            enableECG.setValue(value);
+            mBluetoothGatt.writeCharacteristic(enableECG);
+        }
+    }
+
+    public BluetoothGattService saveService(BluetoothGattService service){
+        thisService = service;
+        return thisService;
     }
 
 

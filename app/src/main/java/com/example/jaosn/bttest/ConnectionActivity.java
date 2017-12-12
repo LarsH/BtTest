@@ -104,10 +104,10 @@ public class ConnectionActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 arrayAdapterCharas.clear();
                 charaList = services.get(position).getCharacteristics(); //List with characteristics
+                mBluetoothLeService.saveService(services.get(position)); //HACK!!!! NEW
                 charaStringList = getCharacteristicsToList(charaList); //List with string UUIDs of characteristics
                 arrayAdapterCharas.notifyDataSetChanged();
                 Log.d("ConnectionActivity","getCharacteristics()");
-
             }
         });
 

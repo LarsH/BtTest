@@ -41,6 +41,7 @@ public class CharacteristicActivity extends AppCompatActivity {
     private ArrayList<ArrayList<Entry>> multiChannelList;
     private ArrayList<ArrayList<Entry>> listOfEntries;
     private int tapped;
+    private int pressed = 0;
 
 
     // Code to manage Service lifecycle.
@@ -123,7 +124,23 @@ public class CharacteristicActivity extends AppCompatActivity {
                 LineData data = new LineData(dataSets);
                 chart.setData(data);
                 chart.invalidate(); // refresh
+            }
+        });
 
+        final Button enableButton = findViewById(R.id.enable);
+        enableButton.setText("Enable");
+        enableButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(pressed == 0){
+                    enableButton.setText("Stop");
+                    mBluetoothLeService.enableECG(true);
+                    pressed = 1;
+                } else if(pressed == 1){
+                    enableButton.setText("Enable");
+                    mBluetoothLeService.enableECG(false);
+                    pressed = 0;
+                }
             }
         });
 
