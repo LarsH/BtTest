@@ -118,7 +118,8 @@ public class ConnectionActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.d("onItemClick charalist","Attempting to read characteristic");
-                mBluetoothLeService.readCharacteristic(charaList.get(i));
+                //mBluetoothLeService.readCharacteristic(charaList.get(i));
+                mBluetoothLeService.saveCharacteristic(charaList.get(i));
                 Intent intent = new Intent(getBaseContext(),CharacteristicActivity.class);
                 intent.putExtra("com.example.jaosn.bttest.BtDevice", device);
                 startActivity(intent);

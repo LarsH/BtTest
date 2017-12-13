@@ -42,6 +42,7 @@ public class CharacteristicActivity extends AppCompatActivity {
     private ArrayList<ArrayList<Entry>> listOfEntries;
     private int tapped;
     private int pressed = 0;
+    private int count = 0;
 
 
     // Code to manage Service lifecycle.
@@ -82,7 +83,7 @@ public class CharacteristicActivity extends AppCompatActivity {
 
         //Get the intent that started this activity
         Intent intent = getIntent();
-        BluetoothDevice device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
+        device = intent.getExtras().getParcelable("com.example.jaosn.bttest.BtDevice");
         deviceAddress = device.getAddress();
         Log.d("CharacteristicActivity","getIntent()");
 
@@ -98,7 +99,6 @@ public class CharacteristicActivity extends AppCompatActivity {
         dataArray = new ArrayList<>();
         entries = new ArrayList<>();
         multiChannelList = new ArrayList<>();
-
 
 
         final Button button = findViewById(R.id.plotbutton);
@@ -136,7 +136,7 @@ public class CharacteristicActivity extends AppCompatActivity {
                     enableButton.setText("Stop");
                     mBluetoothLeService.enableECG(true);
                     pressed = 1;
-                } else if(pressed == 1){
+                } else {
                     enableButton.setText("Enable");
                     mBluetoothLeService.enableECG(false);
                     pressed = 0;
@@ -152,9 +152,13 @@ public class CharacteristicActivity extends AppCompatActivity {
                     dataArray.clear();
                     chart.clear(); //Clear before plot
                     chart.invalidate();
-                    mBluetoothLeService.turnOnNotification();
+                    mBluetoothLeService.turnOnNotification(); //ECG enable in callback
+                    Log.d("CharacteristicActivity","Notification enabled");
                     button.setVisibility(View.VISIBLE);
                     tv.setVisibility(View.VISIBLE);
+                    // After subscribing to notification, enable to start measurement
+                    //mBluetoothLeService.enableECG(true);
+                    Log.d("CharacteristicActivity","Enable ECG true");
                 } else {
                     // The toggle is disabled
                     mBluetoothLeService.turnOffNotification();
@@ -166,17 +170,7 @@ public class CharacteristicActivity extends AppCompatActivity {
 
 
     public void screenTapped(View view){
-        data = mBluetoothLeService.returnDataToActivity();
-        dataArray.add(data);
-        if(tapped == 4){
-            tapped = 0;
-            Toast.makeText(getApplicationContext(), "BAJS", Toast.LENGTH_SHORT).show();
-        } else if(tapped == 3){
-            Toast.makeText(getApplicationContext(), "Snart får du", Toast.LENGTH_SHORT).show();
-            tapped += 1;
-        } else {
-            tapped += 1;
-        }
+        mBluetoothLeService.readSavedCharacteristic();
     }
 
     public int byteToInt(byte[] data){
@@ -234,6 +228,13 @@ public class CharacteristicActivity extends AppCompatActivity {
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 Log.d("Broadcast","Data available");
                 Log.d("CharacteristicActivity","Data available broadcast");
+                //NEW
+                data = mBluetoothLeService.returnDataToActivity();
+                dataArray.add(data);
+                String s = Integer.toString(byteToInt(data));
+                TextView tv = findViewById(R.id.dataField);
+                tv.setText(s);
+
             } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)) {
                 Log.d("CharacteristicActivity", "Broadcast data available!");
             } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
@@ -242,7 +243,18 @@ public class CharacteristicActivity extends AppCompatActivity {
                 String s = Integer.toString(byteToInt(data));
                 TextView tv = findViewById(R.id.dataField);
                 tv.setText(s);
-                Log.d("CharacteristicActivity","Notification on changed value");
+                count += 1;
+                Log.d("CharacteristicActivity","Notification on changed value: " + count);
+
+                //Live plot test, bajs
+                /*
+                multiChannelList = parseDataIntoLists(dataArray);
+                LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
+                List<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(channel0);
+                LineData data = new LineData(dataSets);
+                chart.setData(data);
+                chart.invalidate(); // refresh */
             }
         }
     };

@@ -31,6 +31,7 @@ public class BluetoothLeService extends Service {
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
+    private int count = 0;
 
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
@@ -98,11 +99,6 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
                 Log.d("Service","onCharacteristicRead callback");
-                /* //Test the read
-                byte[] tmp = characteristic.getValue();
-                byte[] tmp2 = thisCharacteristic.getValue();
-                Log.d("Service","Value " + new String(tmp));
-                Log.d("Service", "Value from save " + new String(tmp2)); */
             } else {
                 Log.d("Service", "onCharacteristicread: Read failed!");
             }
@@ -114,8 +110,6 @@ public class BluetoothLeService extends Service {
             //broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             broadcastUpdate(CHARACTERISTIC_CHANGED); //NEW
             Log.d("Service","Characteristic changed");
-            //new code
-            //characteristic.getValue();
         }
         @Override
         public void onCharacteristicWrite (BluetoothGatt gatt,
@@ -135,6 +129,8 @@ public class BluetoothLeService extends Service {
                                 int status){
             if(status == BluetoothGatt.GATT_SUCCESS){
                 Log.d("Service","Written descriptor");
+                //Test ECG Enable here!
+                //enableECG(true);
             } else {
                 Log.d("Service","Descriptor write failed");
             }
@@ -297,7 +293,8 @@ public class BluetoothLeService extends Service {
     }
 
     public byte[] returnDataToActivity(){
-        Log.d("Service","getValue() from 'saved' characteristic");
+        count += 1;
+        Log.d("Service","getValue() from 'saved' characteristic: " + count);
         return thisCharacteristic.getValue();
     }
 
