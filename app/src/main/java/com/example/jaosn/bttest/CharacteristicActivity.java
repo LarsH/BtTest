@@ -44,6 +44,7 @@ public class CharacteristicActivity extends AppCompatActivity {
     private int tapped;
     private int pressed = 0;
     private int count = 0;
+    private ArrayList<Float> filterCoeff;
 
 
     // Code to manage Service lifecycle.
@@ -108,6 +109,7 @@ public class CharacteristicActivity extends AppCompatActivity {
         dataArray = new ArrayList<>();
         entries = new ArrayList<>();
         multiChannelList = new ArrayList<>();
+        filterCoeff  = new ArrayList<>();
 
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -117,10 +119,20 @@ public class CharacteristicActivity extends AppCompatActivity {
                 tv.setVisibility(View.GONE);
                 toggle.setChecked(false);
 
-                //NEW, this is not correct
+                //Print data in log
                 multiChannelList = parseDataIntoLists(dataArray);
+                String gString = "";
+                for(Entry val : multiChannelList.get(0)){
+                    float y = val.getY();
+                    gString += "," + y;
+                }
+                Log.d("Received data: ",gString);
+
+                //OLD plot shit
+                /*
                 LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
                 channel0.setColor(getResources().getColor(R.color.channel0));
+
                 LineDataSet channel1 = new LineDataSet(multiChannelList.get(1), "Channel 1");
                 channel1.setColor(getResources().getColor(R.color.channel1));
                 LineDataSet channel2 = new LineDataSet(multiChannelList.get(2), "Channel 2");
@@ -129,7 +141,25 @@ public class CharacteristicActivity extends AppCompatActivity {
                 dataSets.add(channel0);
                 //dataSets.add(channel1);
                 //dataSets.add(channel2);
+                */
+                ArrayList<Float> yVals = new ArrayList<>();
+                ArrayList<Float> filtered = new ArrayList<>();
+                ArrayList<Entry> plotValues = new ArrayList<>();
+                ArrayList<Entry> filterPlot = new ArrayList<>();
 
+                yVals = parseByteToFloat(dataArray);
+                filtered = filterData(yVals);
+
+                filterPlot = parseFloatToEntry(filtered);
+                plotValues = parseFloatToEntry(yVals);
+
+                LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
+                channel0.setColor(getResources().getColor(R.color.channel0));
+                LineDataSet channel1 = new LineDataSet(filterPlot, "Filtered");
+                channel1.setColor(getResources().getColor(R.color.ecg_Green));
+                List<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(channel0);
+                //dataSets.add(channel1);
                 LineData data = new LineData(dataSets);
                 chart.setData(data);
                 chart.invalidate(); // refresh
@@ -179,42 +209,78 @@ public class CharacteristicActivity extends AppCompatActivity {
 
     } //onCreate
 
+    public ArrayList<Float> parseByteToFloat(ArrayList<byte[]> receivedData){
+        ArrayList<Float> parsed = new ArrayList<>();
+        int SAMPLES = 10;
+
+        for(byte[] data : receivedData){
+            for(int i = 0; i < SAMPLES; i++){
+                float y = (float) byteToIntAtIndex(data,2*i);
+                parsed.add(y);
+            }
+        }
+        return parsed;
+    }
+
+    public ArrayList<Entry> parseFloatToEntry(ArrayList<Float> yVals){
+        ArrayList<Entry> toPlot = new ArrayList<>();
+        int x = 0;
+        for(float y : yVals){
+            toPlot.add(new Entry(x,y));
+            x += 1;
+        }
+        return toPlot;
+    }
+
+    public ArrayList<Float> filterData(ArrayList<Float> yvals){
+        ArrayList<Float> filteredData = new ArrayList<>();
+        double A[] ={1, 0.33, 0.33, 1};
+        double B[] = {1, 2.95, 1.0, 0};
+        ArrayList<Float> oldOutVal = new ArrayList<>();
+        ArrayList<Float> oldInVal = new ArrayList<>();
+        for(int i = 0; i < 4; i++){
+            oldOutVal.add(i,0f);
+            oldInVal.add(i,0f);
+        }
+        for(float input : yvals){
+            //DO filtering
+            oldInVal.add(0,input);
+            float outVal = 0;
+            for(int i = 0; i < 4; i++){
+                outVal += A[i]*oldInVal.get(i) + B[i]*oldOutVal.get(i);
+            }
+            oldOutVal.add(0,outVal);
+            filteredData.add(outVal);
+        }
+        return filteredData;
+    }
+
 
     public void screenTapped(View view){
         mBluetoothLeService.readSavedCharacteristic();
     }
 
-    public int byteToInt(byte[] data){
-        int msb = data[1];
-        int lsb = data[0];
-        if(msb < 0){
-            msb += 256;
-        }
-        if(lsb < 0){
-            lsb += 256;
-        }
-        return 256*msb + lsb;
-    }
 
     public ArrayList<ArrayList<Entry>> parseDataIntoLists(ArrayList<byte[]> dataArray) {
         Entry tmp;
-        int numChannels = 8;
+        int SAMPLES = 10;
         int x = 0;
         listOfEntries = new ArrayList<ArrayList<Entry>>();
 
-        for(int channel = 0; channel < numChannels; channel++) {
+        //for(int channel = 0; channel < numChannels; channel++) {
             // Fix this nicer, if possible...
-            listOfEntries.add(channel, new ArrayList<Entry>());
-        }
+            listOfEntries.add(0, new ArrayList<Entry>());
+        //}
 
         for(byte[] data : dataArray) {
             //int timestamp = (0x10000 * byteToIntAtIndex(data,2)) + byteToIntAtIndex(data,0); //Get timestamp
             //float x = timestamp/(float)0x10000; //Convert system tick to second.
-            for(int channel = 0; channel < numChannels; channel++) {  //Get y value for each channel
-                int y = byteToIntAtIndex(data,4+2*channel);
-                x += 1;
+
+            for(int channel = 0; channel < SAMPLES; channel++) {  //Get y value for each channel
+                int y = byteToIntAtIndex(data,2*channel);
                 tmp = new Entry(x,y); //Data point for one channel
-                listOfEntries.get(channel).add(tmp);
+                x += 1;
+                listOfEntries.get(0).add(tmp);
             }
         }
         return listOfEntries;
@@ -244,20 +310,23 @@ public class CharacteristicActivity extends AppCompatActivity {
                 //NEW
                 data = mBluetoothLeService.returnDataToActivity();
                 dataArray.add(data);
-                String s = Integer.toString(byteToInt(data));
-                TextView tv = findViewById(R.id.dataField);
-                tv.setText(s);
+                //String s = Integer.toString(byteToInt(data));
+                //TextView tv = findViewById(R.id.dataField);
+                //tv.setText(s);
             } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)) {
                 Log.d("CharacteristicActivity", "Broadcast data available!");
             } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
                 data = mBluetoothLeService.returnDataToActivity();
                 dataArray.add(data); //END NEW
-                String s = Integer.toString(byteToInt(data));
-                TextView tv = findViewById(R.id.dataField);
-                tv.setText(s);
+                //String s = Integer.toString(byteToInt(data));
+                //TextView tv = findViewById(R.id.dataField);
+                //tv.setText(s);
                 count += 1;
-                Log.d("CharacteristicActivity","Notification on changed value: " + count);
+                //Log.d("CharacteristicActivity","Notification on changed value: " + count);
                 mBluetoothLeService.dataAck(true); //Ack when read.
+                if(count == 1023){
+                    Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_LONG).show();
+                }
             }
         }
     };
