@@ -19,6 +19,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -94,6 +95,14 @@ public class CharacteristicActivity extends AppCompatActivity {
         Log.d("CharacteristicActivity","Service bind!");
 
         final TextView tv = findViewById(R.id.dataField);
+        final ToggleButton toggle = findViewById(R.id.notificationEnable);
+        final Button button = findViewById(R.id.plotbutton);
+        final Button enableButton = findViewById(R.id.enable);
+        tv.setVisibility(View.GONE);
+        button.setVisibility(View.GONE); //Plot button invisible on start
+        enableButton.setVisibility(View.GONE);
+        enableButton.setText("Enable");
+
 
         //Initialize lists to store stuff
         dataArray = new ArrayList<>();
@@ -101,12 +110,12 @@ public class CharacteristicActivity extends AppCompatActivity {
         multiChannelList = new ArrayList<>();
 
 
-        final Button button = findViewById(R.id.plotbutton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 button.setVisibility(View.GONE);
                 tv.setVisibility(View.GONE);
+                toggle.setChecked(false);
 
                 //NEW, this is not correct
                 multiChannelList = parseDataIntoLists(dataArray);
@@ -118,8 +127,8 @@ public class CharacteristicActivity extends AppCompatActivity {
                 channel2.setColor(getResources().getColor(R.color.ecg_Green));
                 List<ILineDataSet> dataSets = new ArrayList<>();
                 dataSets.add(channel0);
-                dataSets.add(channel1);
-                dataSets.add(channel2);
+                //dataSets.add(channel1);
+                //dataSets.add(channel2);
 
                 LineData data = new LineData(dataSets);
                 chart.setData(data);
@@ -127,24 +136,26 @@ public class CharacteristicActivity extends AppCompatActivity {
             }
         });
 
-        final Button enableButton = findViewById(R.id.enable);
-        enableButton.setText("Enable");
+
         enableButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(pressed == 0){
-                    enableButton.setText("Stop");
+                    //enableButton.setText("Stop");
                     mBluetoothLeService.enableECG(true);
                     pressed = 1;
+                    tv.setVisibility(View.VISIBLE);
+                    enableButton.setVisibility(View.GONE);
+                    button.setVisibility(View.VISIBLE);
                 } else {
-                    enableButton.setText("Enable");
+                    //enableButton.setText("Enable");
                     mBluetoothLeService.enableECG(false);
                     pressed = 0;
                 }
             }
         });
 
-        ToggleButton toggle = (ToggleButton) findViewById(R.id.notificationEnable);
+
         toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -154,13 +165,13 @@ public class CharacteristicActivity extends AppCompatActivity {
                     chart.invalidate();
                     mBluetoothLeService.turnOnNotification(); //ECG enable in callback
                     Log.d("CharacteristicActivity","Notification enabled");
-                    button.setVisibility(View.VISIBLE);
-                    tv.setVisibility(View.VISIBLE);
-                    // After subscribing to notification, enable to start measurement
-                    //mBluetoothLeService.enableECG(true);
+                    //button.setVisibility(View.VISIBLE);
+                    enableButton.setVisibility(View.VISIBLE);
                     Log.d("CharacteristicActivity","Enable ECG true");
                 } else {
                     // The toggle is disabled
+                    enableButton.setVisibility(View.GONE);
+                    button.setVisibility(View.GONE);
                     mBluetoothLeService.turnOffNotification();
                 }
             }
@@ -188,6 +199,7 @@ public class CharacteristicActivity extends AppCompatActivity {
     public ArrayList<ArrayList<Entry>> parseDataIntoLists(ArrayList<byte[]> dataArray) {
         Entry tmp;
         int numChannels = 8;
+        int x = 0;
         listOfEntries = new ArrayList<ArrayList<Entry>>();
 
         for(int channel = 0; channel < numChannels; channel++) {
@@ -196,10 +208,11 @@ public class CharacteristicActivity extends AppCompatActivity {
         }
 
         for(byte[] data : dataArray) {
-            int timestamp = (0x10000 * byteToIntAtIndex(data,2)) + byteToIntAtIndex(data,0); //Get timestamp
-            float x = timestamp/(float)0x10000; //Convert system tick to second.
+            //int timestamp = (0x10000 * byteToIntAtIndex(data,2)) + byteToIntAtIndex(data,0); //Get timestamp
+            //float x = timestamp/(float)0x10000; //Convert system tick to second.
             for(int channel = 0; channel < numChannels; channel++) {  //Get y value for each channel
                 int y = byteToIntAtIndex(data,4+2*channel);
+                x += 1;
                 tmp = new Entry(x,y); //Data point for one channel
                 listOfEntries.get(channel).add(tmp);
             }
@@ -234,7 +247,6 @@ public class CharacteristicActivity extends AppCompatActivity {
                 String s = Integer.toString(byteToInt(data));
                 TextView tv = findViewById(R.id.dataField);
                 tv.setText(s);
-
             } else if (BluetoothLeService.CHARACTERISTIC_DATA.equals(action)) {
                 Log.d("CharacteristicActivity", "Broadcast data available!");
             } else if (BluetoothLeService.CHARACTERISTIC_CHANGED.equals(action)){ //NEW
@@ -245,16 +257,7 @@ public class CharacteristicActivity extends AppCompatActivity {
                 tv.setText(s);
                 count += 1;
                 Log.d("CharacteristicActivity","Notification on changed value: " + count);
-
-                //Live plot test, bajs
-                /*
-                multiChannelList = parseDataIntoLists(dataArray);
-                LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
-                List<ILineDataSet> dataSets = new ArrayList<>();
-                dataSets.add(channel0);
-                LineData data = new LineData(dataSets);
-                chart.setData(data);
-                chart.invalidate(); // refresh */
+                mBluetoothLeService.dataAck(true); //Ack when read.
             }
         }
     };

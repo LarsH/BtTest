@@ -11,20 +11,21 @@
         android:id="@+id/enable"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="16dp"
         android:text="Button"
-        app:layout_constraintLeft_toLeftOf="parent"
-        tools:layout_editor_absoluteY="66dp" />
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/notificationEnable" />
 
     <Button
         android:id="@+id/plotbutton"
-        android:layout_width="72dp"
-        android:layout_height="40dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginRight="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:text="Plot"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/notificationEnable" />
+        app:layout_constraintTop_toBottomOf="@+id/enable" />
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -54,8 +55,8 @@
 
     <ToggleButton
         android:id="@+id/notificationEnable"
-        android:layout_width="49dp"
-        android:layout_height="42dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginRight="16dp"
         android:layout_marginTop="16dp"
         android:checked="false"

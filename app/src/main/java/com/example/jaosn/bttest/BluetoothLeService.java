@@ -333,6 +333,17 @@ public class BluetoothLeService extends Service {
         }
     }
 
+    public void dataAck(boolean ack){
+        byte[] value = new byte[1];
+        BluetoothGattCharacteristic dataAck = thisService.getCharacteristic(UUID.fromString("F0001124-0451-4000-B000-000000000000"));
+        if (ack){
+            value[0] = (byte) 1;
+            //Write '1' to characteristic in ack service to signal data ack
+            dataAck.setValue(value);
+            mBluetoothGatt.writeCharacteristic(dataAck);
+        }
+    }
+
     public BluetoothGattService saveService(BluetoothGattService service){
         thisService = service;
         return thisService;
