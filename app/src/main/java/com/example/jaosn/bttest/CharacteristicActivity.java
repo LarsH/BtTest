@@ -128,39 +128,27 @@ public class CharacteristicActivity extends AppCompatActivity {
                 }
                 Log.d("Received data: ",gString);
 
-                //OLD plot shit
-                /*
-                LineDataSet channel0 = new LineDataSet(multiChannelList.get(0), "Channel 0");
-                channel0.setColor(getResources().getColor(R.color.channel0));
-
-                LineDataSet channel1 = new LineDataSet(multiChannelList.get(1), "Channel 1");
-                channel1.setColor(getResources().getColor(R.color.channel1));
-                LineDataSet channel2 = new LineDataSet(multiChannelList.get(2), "Channel 2");
-                channel2.setColor(getResources().getColor(R.color.ecg_Green));
-                List<ILineDataSet> dataSets = new ArrayList<>();
-                dataSets.add(channel0);
-                //dataSets.add(channel1);
-                //dataSets.add(channel2);
-                */
                 ArrayList<Float> yVals = new ArrayList<>();
                 ArrayList<Float> filtered = new ArrayList<>();
-                ArrayList<Entry> plotValues = new ArrayList<>();
+                //ArrayList<Entry> plotValues = new ArrayList<>();
                 ArrayList<Entry> filterPlot = new ArrayList<>();
 
                 yVals = parseByteToFloat(dataArray);
                 filtered = filterData(yVals);
 
                 filterPlot = parseFloatToEntry(filtered);
-                plotValues = parseFloatToEntry(yVals);
+                //plotValues = parseFloatToEntry(yVals);
 
-                LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
-                channel0.setColor(getResources().getColor(R.color.channel0));
+                //LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
+                //channel0.setColor(getResources().getColor(R.color.channel0));
                 LineDataSet channel1 = new LineDataSet(filterPlot, "Filtered");
                 channel1.setColor(getResources().getColor(R.color.ecg_Green));
-                List<ILineDataSet> dataSets = new ArrayList<>();
-                dataSets.add(channel0);
+                //List<ILineDataSet> dataSets = new ArrayList<>();
+                //dataSets.add(channel0);
                 //dataSets.add(channel1);
-                LineData data = new LineData(dataSets);
+                channel1.setDrawCircles(false);
+                LineData data = new LineData(channel1);
+
                 chart.setData(data);
                 chart.invalidate(); // refresh
             }
@@ -234,8 +222,8 @@ public class CharacteristicActivity extends AppCompatActivity {
 
     public ArrayList<Float> filterData(ArrayList<Float> yvals){
         ArrayList<Float> filteredData = new ArrayList<>();
-        double A[] ={1, 0.33, 0.33, 1};
-        double B[] = {1, 2.95, 1.0, 0};
+        double A[] ={1, -0.4, 0.17};
+        double B[] = {0.59, -0.4, 0.59};
         ArrayList<Float> oldOutVal = new ArrayList<>();
         ArrayList<Float> oldInVal = new ArrayList<>();
         for(int i = 0; i < 4; i++){
@@ -246,8 +234,8 @@ public class CharacteristicActivity extends AppCompatActivity {
             //DO filtering
             oldInVal.add(0,input);
             float outVal = 0;
-            for(int i = 0; i < 4; i++){
-                outVal += A[i]*oldInVal.get(i) + B[i]*oldOutVal.get(i);
+            for(int i = 0; i < 3; i++){
+                outVal += B[i]*oldInVal.get(i) + A[i]*oldOutVal.get(i);
             }
             oldOutVal.add(0,outVal);
             filteredData.add(outVal);
