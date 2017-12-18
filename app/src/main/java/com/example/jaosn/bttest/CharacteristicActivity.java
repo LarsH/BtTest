@@ -181,6 +181,8 @@ public class CharacteristicActivity extends AppCompatActivity {
                     enableButton.setVisibility(View.GONE);
                     button.setVisibility(View.VISIBLE);
                     progressbar.setVisibility(View.VISIBLE);
+                    progressbar.setProgress(progressStatus);
+                    Toast.makeText(getApplicationContext(), "Starting ECG measurement", Toast.LENGTH_LONG).show();
                 } else {
                     //enableButton.setText("Enable");
                     mBluetoothLeService.enableECG(false);
