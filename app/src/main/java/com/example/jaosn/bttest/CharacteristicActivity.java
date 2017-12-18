@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -46,6 +47,8 @@ public class CharacteristicActivity extends AppCompatActivity {
     private int pressed = 0;
     private int count = 0;
     private ArrayList<Float> filterCoeff;
+    private ProgressBar progressbar;
+    private int progressStatus = 0;
 
 
     // Code to manage Service lifecycle.
@@ -103,10 +106,12 @@ public class CharacteristicActivity extends AppCompatActivity {
         final ToggleButton toggle = findViewById(R.id.notificationEnable);
         final Button button = findViewById(R.id.plotbutton);
         final Button enableButton = findViewById(R.id.enable);
+        progressbar = findViewById(R.id.progressBar);
         tv.setVisibility(View.GONE);
         button.setVisibility(View.GONE); //Plot button invisible on start
         enableButton.setVisibility(View.GONE);
         enableButton.setText("Enable");
+        progressbar.setVisibility(View.GONE);
 
 
         //Initialize lists to store stuff
@@ -122,6 +127,7 @@ public class CharacteristicActivity extends AppCompatActivity {
                 button.setVisibility(View.GONE);
                 tv.setVisibility(View.GONE);
                 toggle.setChecked(false);
+                progressbar.setVisibility(View.GONE);
 
                 //Print data in log
                 multiChannelList = parseDataIntoLists(dataArray);
@@ -174,6 +180,7 @@ public class CharacteristicActivity extends AppCompatActivity {
                     tv.setVisibility(View.VISIBLE);
                     enableButton.setVisibility(View.GONE);
                     button.setVisibility(View.VISIBLE);
+                    progressbar.setVisibility(View.VISIBLE);
                 } else {
                     //enableButton.setText("Enable");
                     mBluetoothLeService.enableECG(false);
@@ -321,13 +328,17 @@ public class CharacteristicActivity extends AppCompatActivity {
                 //TextView tv = findViewById(R.id.dataField);
                 //tv.setText(s);
                 count += 1;
-                //Log.d("CharacteristicActivity","Notification on changed value: " + count);
+                progressStatus += 1;
+                progressbar.setProgress(progressStatus);
                 mBluetoothLeService.dataAck(true); //Ack when read.
-                if(count == 103){
+                if(count == 200){
                     Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_SHORT).show();
+                    progressbar.setVisibility(View.GONE);
+                    count = 0;
+                    progressStatus = 0;
                 }
             } else if (BluetoothLeService.WRITTEN_DESCRIPTOR.equals(action)){
-                Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_LONG).show();
                 Log.d("CharacteristicActivity","Descriptor written broadcast received");
             }
         }
