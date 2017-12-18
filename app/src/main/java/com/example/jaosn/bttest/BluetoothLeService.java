@@ -53,6 +53,8 @@ public class BluetoothLeService extends Service {
             "com.example.jaosn.bttest.CHARACTERISTIC_CHANGED";
     public final static String CHARACTERISTIC_WRITE =
             "com.example.jaosn.bttest.CHARACTERISTIC_WRITE";
+    public final static String WRITTEN_DESCRIPTOR =
+            "com.example.jaosn.bttest.WRITTEN_DESCRIPTOR";
 
     //TEST method to "save" this characteristic we want to read from
     private BluetoothGattCharacteristic thisCharacteristic;
@@ -129,6 +131,7 @@ public class BluetoothLeService extends Service {
                                 int status){
             if(status == BluetoothGatt.GATT_SUCCESS){
                 Log.d("Service","Written descriptor");
+                broadcastUpdate(WRITTEN_DESCRIPTOR);
                 //Test ECG Enable here!
                 //enableECG(true);
             } else {

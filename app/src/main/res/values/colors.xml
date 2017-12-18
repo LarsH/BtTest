@@ -7,4 +7,5 @@
     <color name="black">#000000</color>
     <color name="channel0">#ff00ff</color>
     <color name="channel1">#ff3300</color>
+    <color name="white">#ffffff</color>
 </resources>

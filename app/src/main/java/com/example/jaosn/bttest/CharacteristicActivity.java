@@ -23,6 +23,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -79,8 +80,11 @@ public class CharacteristicActivity extends AppCompatActivity {
 
         //for the chart
         chart = findViewById(R.id.chart);
-        chart.setBackgroundColor(000);
+        //chart.setBackgroundColor(000);
+        chart.setBackgroundColor(getResources().getColor(R.color.black));
         chart.setNoDataText("");
+        Legend legend = chart.getLegend();
+        legend.setTextColor(getResources().getColor(R.color.white));
         // ADD to XML to rotate android:rotation="90"
 
         //Get the intent that started this activity
@@ -130,24 +134,29 @@ public class CharacteristicActivity extends AppCompatActivity {
 
                 ArrayList<Float> yVals = new ArrayList<>();
                 ArrayList<Float> filtered = new ArrayList<>();
-                //ArrayList<Entry> plotValues = new ArrayList<>();
+                ArrayList<Entry> plotValues = new ArrayList<>();
                 ArrayList<Entry> filterPlot = new ArrayList<>();
 
                 yVals = parseByteToFloat(dataArray);
                 filtered = filterData(yVals);
 
                 filterPlot = parseFloatToEntry(filtered);
-                //plotValues = parseFloatToEntry(yVals);
+                plotValues = parseFloatToEntry(yVals);
 
-                //LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
-                //channel0.setColor(getResources().getColor(R.color.channel0));
+                LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
+                channel0.setColor(getResources().getColor(R.color.channel0));
+
                 LineDataSet channel1 = new LineDataSet(filterPlot, "Filtered");
                 channel1.setColor(getResources().getColor(R.color.ecg_Green));
-                //List<ILineDataSet> dataSets = new ArrayList<>();
-                //dataSets.add(channel0);
-                //dataSets.add(channel1);
+
+                List<ILineDataSet> dataSets = new ArrayList<>();
+                dataSets.add(channel0);
+                dataSets.add(channel1);
                 channel1.setDrawCircles(false);
-                LineData data = new LineData(channel1);
+                channel0.setDrawCircles(false);
+                //LineData data = new LineData(channel1);
+
+                LineData data = new LineData(dataSets);
 
                 chart.setData(data);
                 chart.invalidate(); // refresh
@@ -168,6 +177,7 @@ public class CharacteristicActivity extends AppCompatActivity {
                 } else {
                     //enableButton.setText("Enable");
                     mBluetoothLeService.enableECG(false);
+                    button.setVisibility(View.VISIBLE);
                     pressed = 0;
                 }
             }
@@ -222,22 +232,23 @@ public class CharacteristicActivity extends AppCompatActivity {
 
     public ArrayList<Float> filterData(ArrayList<Float> yvals){
         ArrayList<Float> filteredData = new ArrayList<>();
-        double A[] ={1, -0.4, 0.17};
-        double B[] = {0.59, -0.4, 0.59};
+        float A[] ={1.0f, -1.93304166f, 3.97751368f, -3.79368207f, 3.63320288f, -1.61091454f, 0.76021461f};
+        float B[] = {0.87555508f, -1.76890716f, 3.8099105f, -3.79982396f, 3.8099105f, -1.76890716f, 0.87555508f};
         ArrayList<Float> oldOutVal = new ArrayList<>();
         ArrayList<Float> oldInVal = new ArrayList<>();
-        for(int i = 0; i < 4; i++){
+        for(int i = 0; i < 7; i++){
             oldOutVal.add(i,0f);
             oldInVal.add(i,0f);
         }
-        for(float input : yvals){
+        for(Float input : yvals){
             //DO filtering
-            oldInVal.add(0,input);
-            float outVal = 0;
-            for(int i = 0; i < 3; i++){
-                outVal += B[i]*oldInVal.get(i) + A[i]*oldOutVal.get(i);
+            Float outVal = B[0]*input;
+            for(int i = 1; i < 7; i++){
+                outVal += B[i]*oldInVal.get(i-1) - A[i]*oldOutVal.get(i-1);
             }
+            outVal = outVal/A[0];
             oldOutVal.add(0,outVal);
+            oldInVal.add(0,input);
             filteredData.add(outVal);
         }
         return filteredData;
@@ -312,9 +323,12 @@ public class CharacteristicActivity extends AppCompatActivity {
                 count += 1;
                 //Log.d("CharacteristicActivity","Notification on changed value: " + count);
                 mBluetoothLeService.dataAck(true); //Ack when read.
-                if(count == 1023){
-                    Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_LONG).show();
+                if(count == 103){
+                    Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_SHORT).show();
                 }
+            } else if (BluetoothLeService.WRITTEN_DESCRIPTOR.equals(action)){
+                Toast.makeText(getApplicationContext(), "Data transmission done", Toast.LENGTH_SHORT).show();
+                Log.d("CharacteristicActivity","Descriptor written broadcast received");
             }
         }
     };
