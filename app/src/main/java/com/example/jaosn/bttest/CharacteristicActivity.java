@@ -129,30 +129,23 @@ public class CharacteristicActivity extends AppCompatActivity {
                 toggle.setChecked(false);
                 progressbar.setVisibility(View.GONE);
 
+                ArrayList<Float> yValues0 = parseByteToFloat(dataArray,0);
+                ArrayList<Float> yValues1 = parseByteToFloat(dataArray,1);
+
                 //Print data in log
-                multiChannelList = parseDataIntoLists(dataArray);
-                String gString = "";
-                for(Entry val : multiChannelList.get(0)){
-                    float y = val.getY();
-                    gString += "," + y;
-                }
-                Log.d("Received data: ",gString);
+                Log.d("Received data, Ch0:", yValues0.toArray().toString());
+                Log.d("Received data, Ch1:", yValues1.toArray().toString());
 
-                ArrayList<Float> yVals = new ArrayList<>();
-                ArrayList<Float> filtered = new ArrayList<>();
-                ArrayList<Entry> plotValues = new ArrayList<>();
-                ArrayList<Entry> filterPlot = new ArrayList<>();
+                ArrayList<Entry> plotValues0;
+                ArrayList<Entry> plotValues1;
 
-                yVals = parseByteToFloat(dataArray);
-                filtered = filterData(yVals);
+                plotValues0 = parseFloatToEntry(yValues0);
+                plotValues1 = parseFloatToEntry(yValues1);
 
-                filterPlot = parseFloatToEntry(filtered);
-                plotValues = parseFloatToEntry(yVals);
-
-                LineDataSet channel0 = new LineDataSet(plotValues, "Unfiltered");
+                LineDataSet channel0 = new LineDataSet(plotValues0, "Channel 0");
                 channel0.setColor(getResources().getColor(R.color.channel0));
 
-                LineDataSet channel1 = new LineDataSet(filterPlot, "Filtered ECG signal");
+                LineDataSet channel1 = new LineDataSet(plotValues1, "Channel 1");
                 channel1.setColor(getResources().getColor(R.color.ecg_Green));
 
                 List<ILineDataSet> dataSets = new ArrayList<>();
@@ -160,9 +153,8 @@ public class CharacteristicActivity extends AppCompatActivity {
                 dataSets.add(channel1);
                 channel1.setDrawCircles(false);
                 channel0.setDrawCircles(false);
-                LineData data = new LineData(channel1);
 
-                //LineData data = new LineData(dataSets);
+                LineData data = new LineData(dataSets);
 
                 chart.setData(data);
                 chart.invalidate(); // refresh
@@ -216,12 +208,12 @@ public class CharacteristicActivity extends AppCompatActivity {
 
     } //onCreate
 
-    public ArrayList<Float> parseByteToFloat(ArrayList<byte[]> receivedData){
+    public ArrayList<Float> parseByteToFloat(ArrayList<byte[]> receivedData, int channel){
         ArrayList<Float> parsed = new ArrayList<>();
         int SAMPLES = 10;
 
         for(byte[] data : receivedData){
-            for(int i = 0; i < SAMPLES; i++){
+            for(int i = channel; i < SAMPLES; i +=2 ){
                 float y = (float) byteToIntAtIndex(data,2*i);
                 parsed.add(y);
             }
