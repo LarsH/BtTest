@@ -8,4 +8,6 @@
     <color name="channel0">#ff00ff</color>
     <color name="channel1">#ff3300</color>
     <color name="white">#ffffff</color>
+    <color name="channel6">#afb111</color>
+    <color name="channel7">#ffb111</color>
 </resources>

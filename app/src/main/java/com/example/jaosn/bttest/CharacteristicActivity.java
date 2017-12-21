@@ -131,6 +131,12 @@ public class CharacteristicActivity extends AppCompatActivity {
 
                 ArrayList<Float> yValues0 = parseByteToFloat(dataArray,0);
                 ArrayList<Float> yValues1 = parseByteToFloat(dataArray,1);
+                ArrayList<Float> yValues2 = parseByteToFloat(dataArray,2);
+                ArrayList<Float> yValues3 = parseByteToFloat(dataArray,3);
+                ArrayList<Float> yValues4 = parseByteToFloat(dataArray,4);
+                ArrayList<Float> yValues5 = parseByteToFloat(dataArray,5);
+                ArrayList<Float> yValues6 = parseByteToFloat(dataArray,6);
+                ArrayList<Float> yValues7 = parseByteToFloat(dataArray,7);
 
                 //Print data in log
                 Log.d("Received data, Ch0:", yValues0.toArray().toString());
@@ -138,9 +144,21 @@ public class CharacteristicActivity extends AppCompatActivity {
 
                 ArrayList<Entry> plotValues0;
                 ArrayList<Entry> plotValues1;
+                ArrayList<Entry> plotValues2;
+                ArrayList<Entry> plotValues3;
+                ArrayList<Entry> plotValues4;
+                ArrayList<Entry> plotValues5;
+                ArrayList<Entry> plotValues6;
+                ArrayList<Entry> plotValues7;
 
                 plotValues0 = parseFloatToEntry(yValues0);
                 plotValues1 = parseFloatToEntry(yValues1);
+                plotValues2 = parseFloatToEntry(yValues2);
+                plotValues3 = parseFloatToEntry(yValues3);
+                plotValues4 = parseFloatToEntry(yValues4);
+                plotValues5 = parseFloatToEntry(yValues5);
+                plotValues6 = parseFloatToEntry(yValues6);
+                plotValues7 = parseFloatToEntry(yValues7);
 
                 LineDataSet channel0 = new LineDataSet(plotValues0, "Channel 0");
                 channel0.setColor(getResources().getColor(R.color.channel0));
@@ -148,11 +166,41 @@ public class CharacteristicActivity extends AppCompatActivity {
                 LineDataSet channel1 = new LineDataSet(plotValues1, "Channel 1");
                 channel1.setColor(getResources().getColor(R.color.ecg_Green));
 
+                LineDataSet channel2 = new LineDataSet(plotValues2, "Channel 2");
+                channel2.setColor(getResources().getColor(R.color.colorPrimary));
+
+                LineDataSet channel3 = new LineDataSet(plotValues3, "Channel 3");
+                channel3.setColor(getResources().getColor(R.color.colorPrimaryDark));
+
+                LineDataSet channel4 = new LineDataSet(plotValues4, "Channel 4");
+                channel4.setColor(getResources().getColor(R.color.colorAccent));
+
+                LineDataSet channel5 = new LineDataSet(plotValues5, "Channel 5");
+                channel5.setColor(getResources().getColor(R.color.white));
+
+                LineDataSet channel6 = new LineDataSet(plotValues6, "Channel 6");
+                channel6.setColor(getResources().getColor(R.color.channel6));
+
+                LineDataSet channel7 = new LineDataSet(plotValues7, "Channel 7");
+                channel7.setColor(getResources().getColor(R.color.channel7));
+
                 List<ILineDataSet> dataSets = new ArrayList<>();
                 dataSets.add(channel0);
                 dataSets.add(channel1);
+                dataSets.add(channel2);
+                dataSets.add(channel3);
+                dataSets.add(channel4);
+                dataSets.add(channel5);
+                dataSets.add(channel6);
+                dataSets.add(channel7);
                 channel1.setDrawCircles(false);
                 channel0.setDrawCircles(false);
+                channel2.setDrawCircles(false);
+                channel3.setDrawCircles(false);
+                channel4.setDrawCircles(false);
+                channel5.setDrawCircles(false);
+                channel6.setDrawCircles(false);
+                channel7.setDrawCircles(false);
 
                 LineData data = new LineData(dataSets);
 
@@ -212,11 +260,11 @@ public class CharacteristicActivity extends AppCompatActivity {
         ArrayList<Float> parsed = new ArrayList<>();
         int SAMPLES = 10;
 
-        for(byte[] data : receivedData){
-            for(int i = channel; i < SAMPLES; i +=2 ){
-                float y = (float) byteToIntAtIndex(data,2*i);
-                parsed.add(y);
-            }
+        for(byte[] data : receivedData) {
+            //for(int i = channel; i < SAMPLES; i +=2 ){
+            float y = (float) byteToIntAtIndex(data, 2 * channel);
+            parsed.add(y);
+            //}
         }
         return parsed;
     }
